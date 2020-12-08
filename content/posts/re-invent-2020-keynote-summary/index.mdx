@@ -16,3 +16,119 @@ tags:
 4. Solving real customer problem with builders
 5. Speed
 6. Don't "complexify"
+
+## Objective
+
+This summarize re:Invent keynotes that matters to startup
+
+## Serverless and Containers
+
+### Amazon Elastic Container Registry (ECR) Public
+
+Amazon Elastic Container Registry (ECR) is a fully managed container registry that makes it easy to store, manage, share,and deploy your container images and artifacts anywhere. Amazon ECR eliminates the need to operate your owncontainer repositories or worry about scaling the underlying infrastructure. Amazon ECR hosts your images in a highlyavailable and high-performance architecture, allowing you to reliably deploy images for your container applications. Youcan share container software privately within your organization or publicly worldwide for anyone to discover anddownload.
+
+#### Use Cases: 
+
+1. NEW: Public container image and artifact gallery: You can discover and use container software that vendors, open source projects and community developers sharepublicly inthe Amazon ECR public gallery. Popular base images such as operating systems, AWS-published images,Kubernetes add-ons and files such as Helm charts can be found in the gallery. 
+2. Team and public collaboration: Amazon ECR supports the ability to define and organize repositories in your registry using namespaces. This allows you to organize your repositories based on your team’s existing workflows. You can set which API actions another user mayperform on your repository (e.g., create, list, describe, delete, and get) through resource-level policies, allowing you toeasily share your repositories with different users and AWS accounts, or publicly with anyone in the world.
+
+#### Customer Benefits: 
+
+1. Reduce your effort with a fully managed registry: Amazon Elastic Container Registry eliminates the need to operate and scale the infrastructure required to power your container registry. There is no software to install and manage or infrastructure to scale. Just push your container images to Amazon ECR and pull the imagesusing any container management tool when you need to deploy.
+2. Securely share and download container images Amazon Elastic Container Registry transfers your container images over HTTPS and automatically encrypts your images at rest. You can configure policies to manage permissions and control access to your images using AWS Identity and Access Management (IAM) users and roles without having to manage credentials directly on your EC2 instances.
+3. Provide fast and highly available access: Amazon Elastic Container Registry has a highly scalable, redundant, and durable architecture. Your container images are highly available and accessible, allowing you to reliably deploy new containers for your applications. You can reliably distribute public container images as well as related files such as helm charts and policy configurations for use by any developer. ECR automatically replicates container software to multiple AWS Regions to reduce download times and improve availability.
+
+### AWS Proton
+
+AWS Proton is the first fully managed application deployment service for container and serverless applications. Platform teams can use Proton to connect and coordinate all the different tools needed for infrastructure provisioning, code deployments, monitoring, and updates. Proton enables platform teams to give developers an easy way to deploy their code using containers and serverless technologies, using the management tools, governance, and visibility needed to ensure consistent
+standards and best practices.
+
+#### Availability:
+
+During preview: IAD/us-east-1, CMH/us-east-2, PDX/us-west-2, NRT/apnortheast-1, and DUB/eu-west-1. Global region availability planned for GA
+
+#### Use Cases:
+
+1. Streamlined management: Platform teams use AWS Proton to manageand enforce a consistent set of standards forcompute, networking, continuousintegration/continuous delivery (CI/CD), andsecurity and monitoring in modern containerand serverless environments. With Proton,you can see what was deployed and whodeployed it. You can automate in-placeinfrastructure updates when you update your templates.
+2. Managed developer self-service: AWS Proton enables platform teams to offer acurated self-service interface for developers,using the familiar experience of the AWSManagement Console or AWS Command LineInterface (AWS CLI). Using approved stacks,authorized developers in your organizationare able to use Proton to create and deploy anew production infrastructure service fortheir container and serverless applications.
+3. Infrastructure as code (IaC) adoption: AWS Proton uses infrastructure as code (IaC)to define application stacks and configureresources. It integrates with popular AWS andthird-party CI/CD and observability tools,offering a flexible approach to application management. Proton makes it easy to provideyour developers with a curated set of building blocks they can use to accelerate the pace ofbusiness innovation
+
+#### Customer Benefits:
+
+1. Set guardrails: AWS Proton enables your developers to safelyadopt and deploy applications usingapproved stacks that you manage. It deliversthe right balance of control and flexibility toensure developers can continue rapidinnovation.
+2. Increase developer productivity: AWS Proton lets you adopt new technologies without slowing your developers down. It gives them infrastructure provisioning andcode deployment in a single interface,allowing developers to focus on their code.
+3. Enforce best practices: When you adopt a new feature or best practice, AWS Proton helps you update out-of-date applications with a single click. WithProton, you can ensure consistentarchitecture across your organization
+
+### AWS Lambda Container Image Support & 1ms billing granularity
+
+AWS Lambda supports packaging and deploying functions as container images, making it easy for customers to buildLambda based applications by using familiar container image tooling, workflows, and dependencies. Customers alsobenefit from the operational simplicity, automatic scaling with sub-second startup times, high availability, nativeintegrations with 140 AWS services, and pay for use model offered by AWS Lambda. Enterprise customers can use aconsistent set of tools with both their Lambda and containerized applications for central governance requirements suchas security scanning and image signing. Customers can create their container deployment images by starting with eitherAWS Lambda provided base images or by using one of their preferred community or private enterprise images
+
+#### Availability:
+
+Container Image Support for AWS Lambda and 1ms billing granularity for AWS Lambda are available in all regions whereAWS Lambda is available, except for regions in China.
+
+#### Use Cases: 
+
+1. Build cross-platform applications, with both containers and AWS Lambda
+2. Large applications, or applications relying on large dependencies, such as machine learning, analytics, or dataintensive apps.
+3. Customers who want to run serverless applications but have standardized on container tooling within theirorganizations
+
+#### Customer Benefits: 
+
+1. Leverage familiar container tooling and workflows: Leverage the flexibility and familiarity of container tooling, and the agility and operational simplicity of AWS Lambda tobe more agile when building applications. 
+2. Get the flexibility of containers and agility of AWS Lambda: When invoked, functions deployed as container images are executed as-is, with sub-second automatic scaling. Youbenefit from high availability, only pay for what you use and can take advantage of 140 native service integrations. 
+3. Build and deploy large workloads to AWS Lambda: With container images of up to 10GB, you can easily build and deploy larger workloads that rely on sizabledependencies, such as machine learning or data intensive workloads.
+
+
+### Amazon EC2 Instances Powered by AWS Graviton2 Processors
+
+The new general purpose (M6g), general purpose burstable (T4g), compute optimized (C6g), and memory optimized (R6g) Amazon EC2 instances deliver up to 40% improved price performance over comparable x86-based instances for a broad spectrum of workloads includingapplication servers, open source databases, in-memory caches, microservices, gaming servers, electronic design automation, high-performancecomputing, and video encoding. M6gd, C6gd, and R6gd are variants of these instances with local NVMe-based SSD storage, and C6gn instancesdeliver 100 Gbps networking for compute intensive applications with support for Elastic Fabric Adapter (EFA). These instances are powered bynew AWS Graviton2 processors that deliver up to 7x performance, 4x the number of compute cores, 2x larger private caches per core, and 5xfaster memory compared to the first-generation AWS Graviton Processors. AWS Graviton2 processors are built on advanced 7 nanometermanufacturing technology. They utilize 64-bit Arm Neoverse cores and custom silicon designed by AWS, and introduce several performanceoptimizations versus the first generation. AWS Graviton2 processors provide 2x faster floating-point performance per core for scientific andhigh-performance computing workloads, custom hardware acceleration for compression workloads, fully encrypted DRAM memory, andoptimized instructions for faster CPU-based machine learning inference
+
+#### Availability:
+US East (N. Virginia, Ohio), US West (N. California, Oregon), Europe (Ireland, Frankfurt, London), Canada (Central) and Asia Pacific (Mumbai,Singapore, Sydney, Tokyo) regions
+
+#### Customer Benefits:
+
+1. Best price performance for a broad spectrum of workloads: AWS Graviton2-based general-purpose (M6g), general-purpose burstable (T4g), compute-optimized (C6g), and memory-optimized (R6g) EC2instances deliver up to 40% better price performance over comparable current generation x86-based instances for a broad spectrum ofworkloads such as application servers, micro-services, video encoding, high-performance computing, electronic design automation,compression, gaming, open-source databases, in-memory caches, and CPU-based machine learning inference. 
+2. Extensive ecosystem support: AWS Graviton2 processors, based on the 64-bit Arm architecture, are supported by popular Linux operating systems including Amazon Linux 2,Red Hat, SUSE,and Ubuntu. Many popular applications and services from AWS and Independent Software Vendors also support AWS Graviton2-based instances, including Amazon ECS, Amazon EKS, Amazon ECR, Amazon CodeBuild, Amazon CodeCommit, Amazon CodePipeline, AmazonCodeDeploy, Amazon CloudWatch, Crowdstrike, Datadog, Docker, Drone, GitLab, Jenkins, NGINX, Qualys, Rancher, Rapid7, Tenable, and TravisCI. Arm developers can also leverage this ecosystem to build applications natively in the cloud, thereby eliminating the need for emulationand cross-compilation, which are error prone and time consuming.
+3. Enhanced security for cloud applications: Developers building applications for the cloud rely on cloud infrastructure for security, speed and optimal resource footprint. AWS Graviton2processors feature key capabilities that enables developers to run cloud native applications securely, and at scale, including always-on 256-bitDRAM encryption and 50% faster per core encryption performance compared to first-generation AWS Graviton.Graviton2 powered instancesare built on the Nitro System that features the Nitro security chip with dedicated hardware and software for security functions, as well asencrypted EBS storage volumes by default
+
+
+## AI/ML
+
+### Amazon SageMaker Pipelines 
+
+Amazon SageMaker Pipelines is the world’s first machine learning (ML) CI/CD service accessible to every developer and data scientist.SageMakerPipelines brings CI/CD practices to ML reducing the months of coding required to manually stitch together different code packages to just a few hours.ML workflows are typically out of reach for all but the largest enterprises, because they are hard to build. To build ML workflows, you typicallyneed to create hundreds of code packages for data preparation, model training, and model deployment, and stitch them together so they run asa sequence of steps. The process is tedious and error prone because youneed to define the order of the steps while keeping track ofdependencies between each step, making it slow and difficult to scale model production.With just a few clicks in SageMaker Pipelines, you can create an automated machine learning workflow. SageMaker Pipelines takes care of all the heavy lifting involved with managing the dependencies between each step of the workflow and orchestrates them so you can scale tothousands of models in production and expand your use of machine learning across more lines of business
+
+#### Availability:
+
+Amazon SageMaker Pipelinesis available in all AWS Regions where SageMaker is available. See details on the AWS Regions Table
+
+#### Use Cases: 
+1. Workflowsare required for all machine learning applications, so Amazon SageMaker Pipelinescan be used for all ML use cases.
+
+#### Customer Benefits: 
+
+1. Compose and manage ML workflows: Amazon SageMaker Pipelines enables you to build an automated sequence of steps to move models from concept to production. You can buildevery step of the ML lifecycle with an easy to use Python interface for creating pipelines to develop and deploy models, automate the processthrough built-in CI/CD templates, and monitor the pipelines using SageMaker Studio. You can also manage the dependencies between eachstep, build the correct sequence, and execute the steps automatically, reducing months of coding to a few hours.
+2. Scale workflows to thousands of models:  Amazon SageMaker Pipelines automatically tracks code, datasets, and model versions through each step of the machine learning lifecycle. This enables you to go back and replay model generation steps, troubleshoot problems, and reliably track the lineage of models at scale, acrossthousands of models in production.
+3. Track and access model versions in a model registry: You can have hundreds of machine learning workflows in your business, each with a different version of the same model, which makes trackingmodel versions tedious and time-consuming. To help you track versions, Amazon SageMaker Pipelines provides a central repository of trainedmodels called a model registry. You can access the model registry through SageMaker Studio or programmatically throughthe Python SDK making it easy to deploy your models you are responsible for, across development and production
+
+
+### Amazon SageMakerData Wrangler
+
+SageMaker Data Wrangler takes the tedium out of preparing training data by allowing data scientists and ML engineers to analyze and prepare data for machine learning applications from a single interface. Instead of requiring complex queries to collect data from different sources,SageMaker Data Wrangler connects to data sources with just a few clicks. Its ready-to-use visualization templates and built-in data transformsstreamline the process of cleaning, verifying, and exploring data so you can produce accurate ML models without writing a single line of code.Once your training data is prepared, you can automate data preparation and, through integration with SageMaker Pipelines, add it as a step intoyour ML workflow
+
+#### Availability:
+
+1. Amazon SageMaker Data Wrangleris available in all AWS Regions where SageMaker Studio is available. See details on the AWS Regions Table
+
+#### Use Cases: 
+1. Cleanse & Explore Your Data: Data scientists need to collect data in various formats from different sources, which requires creating complex queries and using import tools toload the data into a data preparation environment. The data selection tool in Amazon SageMaker Data Wrangler makes it easy to select andquery data from one of several data sources. Once data is imported, you can view statistics and access a suite of built-in data transformsdesigned to reduce tedious tasks such as data cleansing and exploration. 
+2. Visualize & Understand Your Data: SageMaker Data Wrangler provides a set of visualization templates, such ashistograms, scatter plots, and box and whisker plots, so you can quickly detect outliers or extreme values within a data set without the need towrite code. You can also use ML model report capabilities to gain an understanding of important columns in your data set, and proactivelyidentify potential inconsistencies in the data preparation workflow. 
+3. Enrich Your Data: Data scientists must use feature engineering to transform data into a format that can be used to build an accurate ML model. SageMaker DataWrangler provides pre-configured data transformation tools so you can easily perform feature engineering. Within SageMaker Data Wrangler, you can also identify imbalancein datasets and spot potential bias in training data
+
+
+
+
+
+
