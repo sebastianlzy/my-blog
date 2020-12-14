@@ -1,6 +1,6 @@
 ---
 title: Top 3 challenges for data analytics
-date: 2020-12-15
+date: 2020-12-10
 description: Top 3 challenges for data analytics
 tags:
   - challenges

@@ -1,6 +1,6 @@
 ---
 title: Shelf life of data
-date: 2020-12-30
+date: 2020-12-10
 description: Shelf life of data
 tags:
   - life of data
