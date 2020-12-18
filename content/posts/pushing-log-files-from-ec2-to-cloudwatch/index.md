@@ -19,14 +19,16 @@ To setup a cloudwatch agent in ec2 to be able to push log files to cloudwatch
 
 ## Instructions
 
+Install awslogs and download setup script
+
 ```sh
-# Install awslogs
 sudo yum install -y awslogs
-
-#  Download the setup script
 curl https://s3.amazonaws.com/aws-cloudwatch/downloads/latest/awslogs-agent-setup.py -O
+```
 
-# Run the setup script and a interactive console will do the rest
+Run the setup script and a interactive console will do the rest
+
+```sh
 sudo python ./awslogs-agent-setup.py --region ap-southeast-1
 > Step 1 of 5: Installing pip ...DONE
   
@@ -59,9 +61,11 @@ sudo python ./awslogs-agent-setup.py --region ap-southeast-1
     1. From start of file.
     2. From end of file.
   Enter choice [1]: 2
+```
 
-# You should see an output like this
+You should see an output like this
 
+```sh
 > - Configuration file successfully saved at: /var/awslogs/etc/awslogs.conf
     - You can begin accessing new log events after a few moments at https://console.aws.amazon.com/cloudwatch/home?region=ap-southeast-1#logs:
     - You can use 'sudo service awslogs start|stop|status|restart' to control the daemon.
@@ -69,8 +73,3 @@ sudo python ./awslogs-agent-setup.py --region ap-southeast-1
     - You can rerun interactive setup using 'sudo python ./awslogs-agent-setup.py --region ap-southeast-1 --only-generate-config'
 
 ```
-
-
-
-
-/var/awslogs/etc/awslogs.conf
