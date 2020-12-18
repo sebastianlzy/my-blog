@@ -1,6 +1,6 @@
 ---
 title: "AWS billing services"
-date: 2020-12-25
+date: 2020-12-01
 slug: "/aws-billing-services"
 ---
 
