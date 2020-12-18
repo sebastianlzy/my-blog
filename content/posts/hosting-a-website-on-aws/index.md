@@ -11,6 +11,9 @@ AWS has a plethora of services that help developers build world class applicatio
 ## Decision tree
 ![Decision Tree](https://github.com/sebastianlzy/draw-io/raw/master/icons/icons-compute-decision-tree.png)
 
+## References
+1. [compute decision tree](https://medium.com/weareservian/choosing-a-suitable-aws-compute-product-a-decision-tree-1dc46caef824)
+
 # Services
 
 ## Amazon S3 + Amazon Cloudfront
