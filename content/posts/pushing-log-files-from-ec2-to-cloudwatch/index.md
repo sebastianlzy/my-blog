@@ -1,6 +1,6 @@
 ---
 title: Pushing log files from ec2 to cloudwatch
-date: 2020-12-07
+date: 2020-12-18
 description: Pushing log files from ec2 to cloudwatch
 tags:
   - tutorial
