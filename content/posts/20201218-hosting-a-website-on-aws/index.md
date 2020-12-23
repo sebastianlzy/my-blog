@@ -1,5 +1,5 @@
 ---
-title: "Hosting a website on AWS: EBS vs EC2 vs Lightsail vs Amplify"
+title: "Hosting a website on AWS"
 date: 2020-12-18
 slug: "/hosting-a-website-on-aws"
 ---
