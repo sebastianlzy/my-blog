@@ -8,6 +8,8 @@ tags:
 
 ---
 
+![scaling-decison-tree](https://raw.githubusercontent.com/sebastianlzy/draw-io/master/blog/scaling-options.png)
+
 ## Scaling web application
 Scalability is the ability to handle increased workload by repeatedly applying a cost effective strategy for extending a system’s capacity
 
