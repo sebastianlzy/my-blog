@@ -2,6 +2,13 @@
 title: "Hosting a website on AWS"
 date: 2020-12-18
 slug: "/hosting-a-website-on-aws"
+tags:
+  - AWS amplify
+  - AWS elastic beanstalk
+  - AWS elastic computing
+  - AWS lightsail
+  - Amazon S3
+  - Amazon Cloudfront
 ---
 
 ## Objective

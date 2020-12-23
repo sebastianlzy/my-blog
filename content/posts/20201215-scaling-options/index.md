@@ -3,8 +3,8 @@ title: Scaling options
 date: 2020-12-15
 description: Questions to ask before adopting microservices or adding horizontal scaling 
 tags:
-  - Adopting microservices
-  - Scaling options
+  - adopting microservices
+  - scaling options
 
 ---
 
