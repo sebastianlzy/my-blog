@@ -8,19 +8,55 @@ tags:
 
 ---
 
+<!-- vscode-markdown-toc -->
+* 1. [Launch a managed cluster](#Launchamanagedcluster)
+	* 1.1. [References](#References)
+* 2. [Understanding workloads](#Understandingworkloads)
+	* 2.1. [References](#References-1)
+* 3. [Push a container to ECR](#PushacontainertoECR)
+* 4. [Deploy loadbalancer controller](#Deployloadbalancercontroller)
+* 5. [Deploy application on to cluster](#Deployapplicationontocluster)
+* 6. [Deploy metrics server](#Deploymetricsserver)
+* 7. [Deploy Kubernetes dashboard](#DeployKubernetesdashboard)
+* 8. [Send logs to cloudwatch](#Sendlogstocloudwatch)
+	* 8.1. [References](#References-1)
+* 9. [Setup container insights](#Setupcontainerinsights)
+* 10. [Enable vertical pod autoscaler](#Enableverticalpodautoscaler)
+* 11. [Enable horizontal pod autoscaler](#Enablehorizontalpodautoscaler)
+* 12. [Enable cluster auto scaler](#Enableclusterautoscaler)
+* 13. [Nodes](#Nodes)
+	* 13.1. [Why do I need cluster autoscaler?](#WhydoIneedclusterautoscaler)
+	* 13.2. [Why will I want to update a managed node group?](#WhywillIwanttoupdateamanagednodegroup)
+	* 13.3. [Managed node group](#Managednodegroup)
+		* 13.3.1. [Without a launch template](#Withoutalaunchtemplate)
+		* 13.3.2. [With launch template](#Withlaunchtemplate)
+	* 13.4. [Self managed node group](#Selfmanagednodegroup)
+	* 13.5. [AWS Fargate](#AWSFargate)
+* 14. [CNI](#CNI)
+	* 14.1. [What is an overlay network?](#Whatisanoverlaynetwork)
+	* 14.2. [Why did AWS develop CNI?](#WhydidAWSdevelopCNI)
+	* 14.3. [How does security group works with AWS CNI?](#HowdoessecuritygroupworkswithAWSCNI)
+	* 14.4. [When should you not use AWS CNI?](#WhenshouldyounotuseAWSCNI)
+	* 14.5. [References](#References-1)
+
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
+
 
 # Objective
 Wrap existing web application into a container and deploy to EKS
 
-## Steps
+# Steps
 
-### 1. Launch a managed cluster
+##  1. <a name='Launchamanagedcluster'></a>Launch a managed cluster
 
 Create cluster
 
 ```sh
-> eksctl create cluster \                                                                                                                                                                                                 
- --name awesomebuilder-container \
+> eksctl create cluster \                                                                                                                                                                                               --name awesomebuilder-container \
  --version <1.18> \
  --with-oidc \
  --without-nodegroup
@@ -28,12 +64,13 @@ Create cluster
 
 Test if cluster is ready
 
-```
+```sh
 > kubectl get svc
 ```
 
-Create Node group
-```
+Create managed node group
+
+```sh
 > eksctl create nodegroup \
   --cluster awesomebuilder-container\
   --name awesomebuilder-node-group \
@@ -46,7 +83,9 @@ Create Node group
   --managed
 ```
 
-``` 
+(Optional) Create managed node group with spot instances
+
+```sh 
 eksctl create nodegroup \
 --cluster awesomebuilder-container \
 --name=awesomebuilder-spot-node-group \
@@ -65,13 +104,13 @@ eksctl create nodegroup \
 
 Watch the status of the nodes creation
 
-```
+```sh
 > kubectl get nodes --watch
 ```
 
 Scaling nodegroup
 
-```
+```sh
 # List nodegroup: eksctl get nodegroup --cluster=<clusterName> [--name=<nodegroupName>]
 > eksctl get nodegroup --cluster=awesomebuilder-container
 
@@ -81,13 +120,13 @@ Scaling nodegroup
 
 Delete nodegroup
 
-```
+```sh
 eksctl delete nodegroup --cluster=awesomebuilder-container --name=awesomebuilder-ui-node-group
 ```
 
 Enable logging
 
-```
+```sh
 eksctl utils update-cluster-logging --enable-types all --cluster awesomebuilder-container
 ```
 
@@ -95,11 +134,11 @@ Provide permission to ec2-instance-role
 
 ![instance role](./policy-attach-to-ec2.png)
 
-#### References
+###  1.1. <a name='References'></a>References
 
 1. https://eksctl.io/usage/managing-nodegroups/
 
-### 2. Understanding workloads
+##  2. <a name='Understandingworkloads'></a>Understanding workloads
 
 
 You can deploy the following types of workloads on a cluster.
@@ -118,34 +157,34 @@ By default, all Amazon EKS clusters have the following workloads:
 
 3. kube-proxy – A DaemonSet that deploys one pod to each Amazon EC2 node in your cluster. The pods maintain network rules on nodes that enable networking communication to your pods. For more information, see kube-proxy in the Kubernetes documentation. This workload isn't deployed to Fargate nodes.
 
-#### References
+###  2.1. <a name='References-1'></a>References
 1. https://kubernetes.io/docs/concepts/workloads/
 
 
-### 3. Push a container to ECR
+##  3. <a name='PushacontainertoECR'></a>Push a container to ECR
 
 Tag container
 
-```
+```sh
 # List images
-docker images
+> docker images
 
 # Tag container
-docker tag awesomebuilder-ui:latest public.ecr.aws/m8o2b2o2/awesomebuilder:awesomebuilder-ui
+> docker tag awesomebuilder-ui:latest public.ecr.aws/m8o2b2o2/awesomebuilder:awesomebuilder-ui
 
 # Login through docker client
-aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/m8o2b2o2
+> aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/m8o2b2o2
 
 # Push container
-docker push public.ecr.aws/m8o2b2o2/awesomebuilder:awesomebuilder-ui
+> docker push public.ecr.aws/m8o2b2o2/awesomebuilder:awesomebuilder-ui
 ``` 
 
 
-### 4. Deploy loadbalancer controller
+##  4. <a name='Deployloadbalancercontroller'></a>Deploy loadbalancer controller
 
 Verify if IAM OIDC provider is found for the cluster
 
-```
+```sh
 # aws eks describe-cluster --name <cluster_name> --query "cluster.identity.oidc.issuer" --output text
 > aws eks describe-cluster --name awesomebuilder-container --query "cluster.identity.oidc.issuer" --output text
 
@@ -198,6 +237,8 @@ metadata:
 
 ```
 
+Deploy aws load balancer controller service
+
 ```sh
 > kubectl apply -f aws-load-balancer-controller-service-account.yaml
 > kubectl get serviceaccounts --all-namespaces
@@ -229,7 +270,7 @@ Install the AWS Load Balancer Controller
 
 ```
 
-### 5. Deploy application on to cluster
+##  5. <a name='Deployapplicationontocluster'></a>Deploy application on to cluster
 
 Create a kubernetes namespace
 
@@ -293,7 +334,7 @@ Deploy the application
 > kubectl -n awesomebuilder describe pod <my-deployment-776d8f8fd8-78w66>
 ```
 
-### 6. Deploy metrics server
+##  6. <a name='Deploymetricsserver'></a>Deploy metrics server
 
 The Kubernetes Vertical Pod Autoscaler automatically adjusts the CPU and memory reservations for your pods to help "right size" your applications. This adjustment can improve cluster resource utilization and free up CPU and memory for other pods. 
 
@@ -316,9 +357,9 @@ kubectl get deployment metrics-server -n kube-system
 
 ```
 
-### 7. Deploy Kubernetes dashboard
+##  7. <a name='DeployKubernetesdashboard'></a>Deploy Kubernetes dashboard
 
-Create service account
+Create service account yaml
 
 ```yaml
 #eks-admin-service-account.yaml
@@ -343,8 +384,11 @@ subjects:
 
 ```
 
-kubectl apply -f eks-admin-service-account.yaml
+Deploy service account
 
+```sh
+kubectl apply -f eks-admin-service-account.yaml
+```
 
 Deploy kube dashboard
 
@@ -362,24 +406,9 @@ Visit [Kube dashboard](http://localhost:8001/api/v1/namespaces/kubernetes-dashbo
 
 ![kube dashboard](./kube-dashboard.png)
 
-### 8. Send logs to cloudwatch
+##  8. <a name='Sendlogstocloudwatch'></a>Send logs to cloudwatch
 
-Attach policy to ec2 IAM 
-
-```
-To attach the necessary policy to the IAM role for your worker nodes
-
-Open the Amazon EC2 console at https://console.aws.amazon.com/ec2/.
-
-Select one of the worker node instances and choose the IAM role in the description.
-
-On the IAM role page, choose Attach policies.
-
-In the list of policies, select the check box next to CloudWatchAgentServerPolicy. If necessary, use the search box to find this policy.
-
-Choose Attach policies.
-
-```
+Attach CloudWatchAgentServerPolicy policy to ec2 IAM role
 
 Create cloudwatch namespace
 
@@ -467,10 +496,10 @@ Deploy fluent bit
 
 
 
-#### References
+###  8.1. <a name='References-1'></a>References
 1. https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Container-Insights-setup-logs-FluentBit.html
 
-### 9. Setup container insights
+##  9. <a name='Setupcontainerinsights'></a>Setup container insights
 
 Deploy quick start to collect container insights
 ```
@@ -484,7 +513,7 @@ curl https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-container-i
 
 ```
 
-### 10. Enable vertical pod autoscaler
+##  10. <a name='Enableverticalpodautoscaler'></a>Enable vertical pod autoscaler
 
 clone git repo
 
@@ -502,7 +531,7 @@ clone git repo
 
 
 
-### 11. Enable horizontal pod autoscaler
+##  11. <a name='Enablehorizontalpodautoscaler'></a>Enable horizontal pod autoscaler
 
 Enable autoscale for deployment
 
@@ -510,7 +539,7 @@ Enable autoscale for deployment
 kubectl autoscale deployment.apps/awesomebuilder-app --cpu-percent=10 --min=1 --max=10
 ```
 
-### 12. Enable cluster auto scaler
+##  12. <a name='Enableclusterautoscaler'></a>Enable cluster auto scaler
 
 ```sh
 > kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml
@@ -544,7 +573,7 @@ kubectl autoscale deployment.apps/awesomebuilder-app --cpu-percent=10 --min=1 --
 
 ```
 
-## References
+# References
 
 1. eksctl: https://eksctl.io/
 2. Best practices: https://aws.github.io/aws-eks-best-practices/
@@ -555,9 +584,9 @@ kubectl autoscale deployment.apps/awesomebuilder-app --cpu-percent=10 --min=1 --
 
 # FAQ
 
-## Nodes
+##  13. <a name='Nodes'></a>Nodes
 
-### Why do I need cluster autoscaler?
+###  13.1. <a name='WhydoIneedclusterautoscaler'></a>Why do I need cluster autoscaler?
 
 Cluster Autoscaler is a tool that automatically adjusts the size of the Kubernetes cluster when one of the following conditions is true:
 
@@ -574,7 +603,7 @@ Scale node group using eksctl
 1. https://eksctl.io/usage/managing-nodegroups/
 
 
-### Why will I want to update a managed node group?
+###  13.2. <a name='WhywillIwanttoupdateamanagednodegroup'></a>Why will I want to update a managed node group?
 
 There are several scenarios where it's useful to update your Amazon EKS managed node group's version or configuration:
 
@@ -585,9 +614,9 @@ There are several scenarios where it's useful to update your Amazon EKS managed 
 5. You want to add or remove AWS tags from your managed node group.
 6. You need to deploy a new version of a launch template with configuration changes, such as an updated custom AMI.
 
-### Managed node group
+###  13.3. <a name='Managednodegroup'></a>Managed node group
 
-#### Without a launch template
+####  13.3.1. <a name='Withoutalaunchtemplate'></a>Without a launch template
 
 Create Cluster with managed node
 
@@ -608,7 +637,7 @@ eksctl create cluster \
 
 Create node group
 
-```
+```sh
 eksctl create nodegroup \
   --cluster <my-cluster> \
   --region <us-west-2> \
@@ -623,7 +652,7 @@ eksctl create nodegroup \
 
 ```
 
-#### With launch template
+####  13.3.2. <a name='Withlaunchtemplate'></a>With launch template
 
 ```yaml
 ---
@@ -644,9 +673,9 @@ managedNodeGroups:
 ```    
 
 
-### Self managed node group
+###  13.4. <a name='Selfmanagednodegroup'></a>Self managed node group
 
-```
+```yaml
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
@@ -674,9 +703,9 @@ nodeGroups:
 
 
 
-### AWS Fargate
+###  13.5. <a name='AWSFargate'></a>AWS Fargate
 
-```
+```sh
 eksctl create cluster \
 --name awesomebuilder-ui-fargate \
 --version 1.18 \
@@ -684,8 +713,8 @@ eksctl create cluster \
 --fargate
 ```
 
-## CNI
-### What is an overlay network?
+##  14. <a name='CNI'></a>CNI
+###  14.1. <a name='Whatisanoverlaynetwork'></a>What is an overlay network?
 An overlay network is a type of networking whereby administrators create multiple atomic and discrete virtualized network layers on top of the physical infrastructure. It decouples network services from the underlying infrastructure by leveraging encapsulation techniques
 
 AWS Virtual Private Cloud uses this technique to run thousands of private, atomic networks across across millions of devices, spanning multiple sites and regions.
@@ -694,7 +723,7 @@ In the context of Kubernetes, an overlay network allows Pods in a Kubernetes clu
 
 ![fannel](https://cdn.sanity.io/images/hgftikht/production/1b228c7fea815cdc70a75dc1bc01d72bce3e503d-1600x972.png?w=1280&h=778&fit=crop&fm=webp)
  
-### Why did AWS develop CNI?
+###  14.2. <a name='WhydidAWSdevelopCNI'></a>Why did AWS develop CNI?
 Using overlay network is extremely complex. There are too many layer of abstraction and encapsulation
 
 1. VPC Flow Logs don’t work: The underlying VPC has no context for the encapsulated overlay network that is running on top of it. VPC flow logs will only show traffic between the hosts in the Kubernetes cluster and makes troubleshooting any network related issues a pain.
@@ -717,13 +746,13 @@ Goals of AWS VPC CNI:
 
 ![AWS VPC CNI](https://cdn.sanity.io/images/hgftikht/production/dc1f912510f1817d7c6b14d1ea53a337e1a35996-1600x989.png?w=1280&h=791&fit=crop&fm=webp)
 
-### How does security group works with AWS CNI?
+###  14.3. <a name='HowdoessecuritygroupworkswithAWSCNI'></a>How does security group works with AWS CNI?
 
 As AWS CNI map pods to a secondary IP addresses, we can specify which security groups to assign to pods 
 
 ![Sg](https://cdn.sanity.io/images/hgftikht/production/5a9416eb3f6aacadb79a91111eff50d48f682175-1600x851.png?w=1280&h=681&fit=crop&fm=webp)
 
-### When should you not use AWS CNI?
+###  14.4. <a name='WhenshouldyounotuseAWSCNI'></a>When should you not use AWS CNI?
 Virtual Machines in AWS have a max limit on the number of Elastic Network Interfaces that can be attached to any single vm at any time. This number varies by instance type. This can be calculated as follows:
 
 ENIs x Secondary ips per ENI = Max Pods per Node
@@ -734,7 +763,7 @@ Another issue with the AWS CNI is its inefficient use of IP addresses. In order 
 
 1. https://docs.aws.amazon.com/eks/latest/userguide/pod-networking.html
 
-### References
+###  14.5. <a name='References-1'></a>References
 1. https://www.contino.io/insights/kubernetes-is-hard-why-eks-makes-it-easier-for-network-and-security-architects
 
 
