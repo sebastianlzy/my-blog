@@ -14,6 +14,535 @@ Wrap existing web application into a container and deploy to EKS
 
 ## Steps
 
+### 1. Launch a managed cluster
+
+Create cluster
+
+```sh
+> eksctl create cluster \                                                                                                                                                                                                 
+ --name awesomebuilder-container \
+ --version <1.18> \
+ --with-oidc \
+ --without-nodegroup
+```
+
+Test if cluster is ready
+
+```
+> kubectl get svc
+```
+
+Create Node group
+```
+> eksctl create nodegroup \
+  --cluster awesomebuilder-container\
+  --name awesomebuilder-node-group \
+  --node-type t3.micro \
+  --nodes 2 \
+  --nodes-min 1 \
+  --nodes-max 4 \
+  --ssh-access \
+  --ssh-public-key /Users/leesebas/.ssh/id_rsa.pub \
+  --managed
+```
+
+``` 
+eksctl create nodegroup \
+--cluster awesomebuilder-container \
+--name=awesomebuilder-spot-node-group \
+--node-labels="autoscaling=enabled,purpose=awesomebuilder-ui,instancetype=spot" \
+--spot \
+--instance-types=m3.medium \
+--nodes 5 \
+--nodes-min 1 \
+--nodes-max 10 \
+--asg-access \
+--full-ecr-access \
+--ssh-access \
+--ssh-public-key /Users/leesebas/.ssh/id_rsa.pub \
+--managed
+```
+
+Watch the status of the nodes creation
+
+```
+> kubectl get nodes --watch
+```
+
+Scaling nodegroup
+
+```
+# List nodegroup: eksctl get nodegroup --cluster=<clusterName> [--name=<nodegroupName>]
+> eksctl get nodegroup --cluster=awesomebuilder-container
+
+# Scale node group
+> eksctl scale nodegroup --cluster=awesomebuilder-container --nodes=3
+```
+
+Delete nodegroup
+
+```
+eksctl delete nodegroup --cluster=awesomebuilder-container --name=awesomebuilder-ui-node-group
+```
+
+Enable logging
+
+```
+eksctl utils update-cluster-logging --enable-types all --cluster awesomebuilder-container
+```
+
+Provide permission to ec2-instance-role
+
+![instance role](./policy-attach-to-ec2.png)
+
+#### References
+
+1. https://eksctl.io/usage/managing-nodegroups/
+
+### 2. Understanding workloads
+
+
+You can deploy the following types of workloads on a cluster.
+
+1. Deployment – Ensures that a specific number of pods run and includes logic to deploy changes.
+2. ReplicaSet – Ensures that a specific number of pods run. Can be controlled by deployments.
+3. StatefulSet – Manages the deployment of stateful applications.
+4. DaemonSet – Ensures that a copy of a pod runs on all (or some) nodes in the cluster.
+5. Job – Creates one or more pods and ensures that a specified number of them run to completion.
+
+By default, all Amazon EKS clusters have the following workloads:
+
+1. coredns –A Deployment that deploys two replicas of the coredns pods. The pods provide name resolution for all pods in the cluster. Two pods are deployed by default for high availability, regardless of the number of nodes deployed in your cluster. For more information, see Installing or upgrading CoreDNS. The pods can be deployed to any node type. However, they can be deployed to Fargate nodes only if your cluster includes a Fargate profile with a namespace that matches the namespace for the workload.
+
+2. aws-node – A DaemonSet that deploys one pod to each Amazon EC2 node in your cluster. The pod runs the Amazon Virtual Private Cloud (Amazon VPC) CNI controller, which provides VPC networking functionality to the pods and nodes in your cluster. For more information, see Pod networking (CNI). This workload isn't deployed to Fargate nodes because Fargate already contains the Amazon VPC CNI controller.
+
+3. kube-proxy – A DaemonSet that deploys one pod to each Amazon EC2 node in your cluster. The pods maintain network rules on nodes that enable networking communication to your pods. For more information, see kube-proxy in the Kubernetes documentation. This workload isn't deployed to Fargate nodes.
+
+#### References
+1. https://kubernetes.io/docs/concepts/workloads/
+
+
+### 3. Push a container to ECR
+
+Tag container
+
+```
+# List images
+docker images
+
+# Tag container
+docker tag awesomebuilder-ui:latest public.ecr.aws/m8o2b2o2/awesomebuilder:awesomebuilder-ui
+
+# Login through docker client
+aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/m8o2b2o2
+
+# Push container
+docker push public.ecr.aws/m8o2b2o2/awesomebuilder:awesomebuilder-ui
+``` 
+
+
+### 4. Deploy loadbalancer controller
+
+Verify if IAM OIDC provider is found for the cluster
+
+```
+# aws eks describe-cluster --name <cluster_name> --query "cluster.identity.oidc.issuer" --output text
+> aws eks describe-cluster --name awesomebuilder-container --query "cluster.identity.oidc.issuer" --output text
+
+https://oidc.eks.ap-southeast-1.amazonaws.com/id/C4F83DBF343BA80974F8335C22BE8523
+
+> aws iam list-open-id-connect-providers | grep C4F83DBF343BA80974F8335C22BE8523
+
+```
+
+Set up IAM policy
+
+```sh
+# download policy
+> curl -o iam_policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.1.0/docs/install/iam_policy.json
+
+# create iam policy
+> aws iam create-policy \
+    --policy-name AWSLoadBalancerControllerIAMPolicy \
+    --policy-document file://iam_policy.json
+
+```
+
+Create the account in kubernetes
+
+```sh
+eksctl create iamserviceaccount \
+  --cluster=awesomebuilder-container \
+  --namespace=kube-system \
+  --name=aws-load-balancer-controller \
+  --attach-policy-arn=arn:aws:iam::057509847405:policy/AWSLoadBalancerControllerIAMPolicy \
+  --override-existing-serviceaccounts \
+  --approve
+
+```
+
+Create the service account in kubernetes
+
+```yaml
+#aws-load-balancer-controller-service-account.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/name: aws-load-balancer-controller
+  name: aws-load-balancer-controller
+  namespace: kube-system
+  annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::<AWS_ACCOUNT_ID>:role/AmazonEKSLoadBalancerControllerRole
+
+```
+
+```sh
+> kubectl apply -f aws-load-balancer-controller-service-account.yaml
+> kubectl get serviceaccounts --all-namespaces
+
+# Ensure that alb-ingress-controller is uninstalled
+
+> kubectl get deployment -n kube-system alb-ingress-controller 
+
+Error from server (NotFound): deployments.apps "alb-ingress-controller" not found
+
+```
+
+Install the AWS Load Balancer Controller
+
+```sh
+#With Helm
+
+>kubectl apply -k "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master"
+>helm repo add eks https://aws.github.io/eks-charts
+>helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller \
+  --set clusterName=awesomebuilder-container \
+  --set serviceAccount.create=false \
+  --set serviceAccount.name=aws-load-balancer-controller \
+  -n kube-system
+  
+#Verify that the controller is installed
+
+> kubectl get deployment -n kube-system aws-load-balancer-controller
+
+```
+
+### 5. Deploy application on to cluster
+
+Create a kubernetes namespace
+
+```sh
+> kubectl create namespace awesomebuilder
+```
+
+Create the service and deployment yaml
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: awesomebuilder-service
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb-ip
+spec:
+  ports:
+    - port: 80
+      targetPort: 5000
+      protocol: TCP
+  type: LoadBalancer
+  selector:
+    app: awesomebuilder-ui
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: awesomebuilder-app
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: awesomebuilder-ui
+  template:
+    metadata:
+      labels:
+        app: awesomebuilder-ui
+    spec:
+      containers:
+        - name: awesomebuilder
+          image: %IMAGE_PATH%
+          ports:
+            - name: http
+              containerPort: 5000
+
+```
+
+Deploy the application
+
+```sh
+> kubectl apply -f awesomebuilder-service.yaml
+
+# View resources: kubectl get all -n <namespace>
+> kubectl get all -n awesomebuilder
+
+# View details of the deployed service: kubectl -n <my-namespace> describe service <my-service>
+> kubectl -n awesomebuilder describe service awesomebuilder-service
+
+# View details of one of the pods: kubectl -n <my-namespace> describe pod <my-deployment-776d8f8fd8-78w66>
+> kubectl -n awesomebuilder describe pod <my-deployment-776d8f8fd8-78w66>
+```
+
+### 6. Deploy metrics server
+
+The Kubernetes Vertical Pod Autoscaler automatically adjusts the CPU and memory reservations for your pods to help "right size" your applications. This adjustment can improve cluster resource utilization and free up CPU and memory for other pods. 
+
+To check if a metrics server is deployed
+
+```sh
+> kubectl -n kube-system get deployment/metrics-server
+```
+
+Deploy the metric server
+
+```sh
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.3.7/components.yaml
+```
+
+Verify the metric server is deployed
+
+```sh
+kubectl get deployment metrics-server -n kube-system
+
+```
+
+### 7. Deploy Kubernetes dashboard
+
+Create service account
+
+```yaml
+#eks-admin-service-account.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: eks-admin
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: eks-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: eks-admin
+  namespace: kube-system
+
+```
+
+kubectl apply -f eks-admin-service-account.yaml
+
+
+Deploy kube dashboard
+
+```sh
+> kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.5/aio/deploy/recommended.yaml
+
+# Expose the proxy network
+> kube proxy
+
+# Get secret token
+> kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep eks-admin | awk '{print $1}')
+```
+
+Visit [Kube dashboard](http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#!/login)
+
+![kube dashboard](./kube-dashboard.png)
+
+### 8. Send logs to cloudwatch
+
+Attach policy to ec2 IAM 
+
+```
+To attach the necessary policy to the IAM role for your worker nodes
+
+Open the Amazon EC2 console at https://console.aws.amazon.com/ec2/.
+
+Select one of the worker node instances and choose the IAM role in the description.
+
+On the IAM role page, choose Attach policies.
+
+In the list of policies, select the check box next to CloudWatchAgentServerPolicy. If necessary, use the search box to find this policy.
+
+Choose Attach policies.
+
+```
+
+Create cloudwatch namespace
+
+```sh
+> kubectl apply -f https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-container-insights/latest/k8s-deployment-manifest-templates/deployment-mode/daemonset/container-insights-monitoring/cloudwatch-namespace.yaml
+
+> kubectl get namespace
+```
+
+Create config map
+
+```sh
+ClusterName=awesomebuilder-container
+RegionName=ap-southeast-1
+FluentBitHttpPort='2020'
+FluentBitReadFromHead='Off'
+[[ ${FluentBitReadFromHead} = 'On' ]] && FluentBitReadFromTail='Off'|| FluentBitReadFromTail='On'
+[[ -z ${FluentBitHttpPort} ]] && FluentBitHttpServer='Off' || FluentBitHttpServer='On'
+kubectl create configmap fluent-bit-cluster-info \
+--from-literal=cluster.name=${ClusterName} \
+--from-literal=http.server=${FluentBitHttpServer} \
+--from-literal=http.port=${FluentBitHttpPort} \
+--from-literal=read.head=${FluentBitReadFromHead} \
+--from-literal=read.tail=${FluentBitReadFromTail} \
+--from-literal=logs.region=${RegionName} -n amazon-cloudwatch
+
+```
+
+Download fluent-bit.yaml
+
+```sh
+> curl https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-container-insights/latest/k8s-deployment-manifest-templates/deployment-mode/daemonset/container-insights-monitoring/fluent-bit/fluent-bit.yaml -o fluent-bit.yaml
+
+```
+
+Remove fluent bit section to reduce amount of logs
+
+```yaml
+[INPUT]
+    Name                tail
+    Tag                 application.*
+    Path                /var/log/containers/fluent-bit*
+    Parser              docker
+    DB                  /var/fluent-bit/state/flb_log.db
+    Mem_Buf_Limit       5MB
+    Skip_Long_Lines     On
+    Refresh_Interval    10
+    Read_from_Head      ${READ_FROM_HEAD}
+
+```
+
+Add a rolling update strategy
+
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluent-bit
+  namespace: amazon-cloudwatch
+  labels:
+    k8s-app: fluent-bit
+    version: v1
+    kubernetes.io/cluster-service: "true"
+spec:
+  selector:
+    matchLabels:
+      k8s-app: fluent-bit
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+...
+
+```
+
+Deploy fluent bit
+
+```sh
+> kubectl apply -f fluent-bit.yaml
+
+# Bonus (restart)
+
+> kubectl rollout restart daemonset.apps/fluent-bit
+```
+
+
+
+#### References
+1. https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Container-Insights-setup-logs-FluentBit.html
+
+### 9. Setup container insights
+
+Deploy quick start to collect container insights
+```
+ClusterName=awesomebuilder-container
+RegionName=ap-southeast-1
+FluentBitHttpPort='2020'
+FluentBitReadFromHead='Off'
+[[ ${FluentBitReadFromHead} = 'On' ]] && FluentBitReadFromTail='Off'|| FluentBitReadFromTail='On'
+[[ -z ${FluentBitHttpPort} ]] && FluentBitHttpServer='Off' || FluentBitHttpServer='On'
+curl https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-container-insights/latest/k8s-deployment-manifest-templates/deployment-mode/daemonset/container-insights-monitoring/quickstart/cwagent-fluent-bit-quickstart.yaml | sed 's/{{cluster_name}}/'${ClusterName}'/;s/{{region_name}}/'${RegionName}'/;s/{{http_server_toggle}}/"'${FluentBitHttpServer}'"/;s/{{http_server_port}}/"'${FluentBitHttpPort}'"/;s/{{read_from_head}}/"'${FluentBitReadFromHead}'"/;s/{{read_from_tail}}/"'${FluentBitReadFromTail}'"/' | kubectl apply -f - 
+
+```
+
+### 10. Enable vertical pod autoscaler
+
+clone git repo
+
+```sh
+> git clone https://github.com/kubernetes/autoscaler.git
+> git checkout vpa-release-0.8
+> cd autoscaler/vertical-pod-autoscaler/
+
+#Deploy vpa
+> ./hack/vpa-up.sh
+
+#Delete VPC
+> ./hack/vpa-down.sh
+```
+
+
+
+### 11. Enable horizontal pod autoscaler
+
+Enable autoscale for deployment
+
+```
+kubectl autoscale deployment.apps/awesomebuilder-app --cpu-percent=10 --min=1 --max=10
+```
+
+### 12. Enable cluster auto scaler
+
+```sh
+> kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml
+
+# Update safe-to-evit to false - to prevent CA from removing the node
+> kubectl -n kube-system annotate deployment.apps/cluster-autoscaler cluster-autoscaler.kubernetes.io/safe-to-evict="false"
+
+# Edit the auto scaling deployment
+> kubectl -n kube-system edit deployment.apps/cluster-autoscaler
+
+# Modify accordingly
+
+ spec:
+      containers:
+      - command:
+        - ./cluster-autoscaler
+        - --v=4
+        - --stderrthreshold=info
+        - --cloud-provider=aws
+        - --skip-nodes-with-local-storage=false
+        - --expander=least-waste
+        - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/awesomebuilder-container
+        - --balance-similar-node-groups
+        - --skip-nodes-with-system-pods=false
+
+# Update cluster autoscaler image
+> kubectl -n kube-system set image deployment.apps/cluster-autoscaler cluster-autoscaler=asia.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler:v1.18.3
+
+# Verify auto-scaler
+> kubectl -n kube-system logs -f deployment.apps/cluster-autoscaler
+
+```
 
 ## References
 
@@ -25,6 +554,135 @@ Wrap existing web application into a container and deploy to EKS
 
 
 # FAQ
+
+## Nodes
+
+### Why do I need cluster autoscaler?
+
+Cluster Autoscaler is a tool that automatically adjusts the size of the Kubernetes cluster when one of the following conditions is true:
+
+there are pods that failed to run in the cluster due to insufficient resources.
+there are nodes in the cluster that have been underutilized for an extended period of time and their pods can be placed on other existing nodes.
+
+1. https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler
+2. https://docs.aws.amazon.com/eks/latest/userguide/cluster-autoscaler.html
+
+Alternative
+
+Scale node group using eksctl
+
+1. https://eksctl.io/usage/managing-nodegroups/
+
+
+### Why will I want to update a managed node group?
+
+There are several scenarios where it's useful to update your Amazon EKS managed node group's version or configuration:
+
+1. You have updated the Kubernetes version for your Amazon EKS cluster and want to update your nodes to use the same Kubernetes version.
+2. A new AMI release version is available for your managed node group. For more information about AMI versions, see Amazon EKS optimized Amazon Linux AMI versions.
+3. You want to adjust the minimum, maximum, or desired count of the instances in your managed node group.
+4. You want to add or remove Kubernetes labels from the instances in your managed node group.
+5. You want to add or remove AWS tags from your managed node group.
+6. You need to deploy a new version of a launch template with configuration changes, such as an updated custom AMI.
+
+### Managed node group
+
+#### Without a launch template
+
+Create Cluster with managed node
+
+```sh
+eksctl create cluster \
+--name awesomebuilder-container \
+--version 1.18 \
+--region ap-southeast-1 \
+--nodegroup-name awesomebuilder-linux-nodes \
+--nodes 3 \
+--nodes-min 1 \
+--nodes-max 4 \
+--with-oidc \
+--ssh-access \
+--ssh-public-key <name-of-ec2-keypair> \
+--managed
+```
+
+Create node group
+
+```
+eksctl create nodegroup \
+  --cluster <my-cluster> \
+  --region <us-west-2> \
+  --name <my-mng> \
+  --node-type <m5.large> \
+  --nodes <3> \
+  --nodes-min <2> \
+  --nodes-max <4> \
+  --ssh-access \
+  --ssh-public-key <my-public-key.pub> \
+  --managed
+
+```
+
+#### With launch template
+
+```yaml
+---
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: <my-cluster>
+  region: <us-west-2>
+  version: '<1.18>'
+iam:
+  withOIDC: true 
+managedNodeGroups:
+- name: <ng-linux>
+  launchTemplate:
+    id: lt-<id>
+    version: "<1>"
+```    
+
+
+### Self managed node group
+
+```
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: <my-cluster>
+  region: <us-west-2>
+  version: '<1.18>'
+
+iam:
+  withOIDC: true   
+
+managedNodeGroups:
+  - name: <linux-ng>
+    instanceType: <m5.large>
+    minSize: <2>
+
+nodeGroups:
+  - name: <windows-ng>
+    instanceType: <m5.large>
+    minSize: <2>
+    volumeSize: <100>
+    amiFamily: <WindowsServer2019FullContainer>
+
+```
+
+
+
+### AWS Fargate
+
+```
+eksctl create cluster \
+--name awesomebuilder-ui-fargate \
+--version 1.18 \
+--region ap-southeast-1 \
+--fargate
+```
 
 ## CNI
 ### What is an overlay network?
