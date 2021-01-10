@@ -3,8 +3,8 @@ title: Well Architected - Reliability
 date: 2020-12-10
 description: Well Architected - Reliability
 tags:
-  - Well architected
-  - Reliability
+  - well architected
+  - reliability
 ---
 
 # What is Reliability ?

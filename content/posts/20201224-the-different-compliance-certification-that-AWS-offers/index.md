@@ -1,7 +1,6 @@
 ---
-title: "common-compliance-certification"
+title: "The different compliance certification that AWS offers"
 date: 2020-12-18
-slug: "/cost-optimization-for-startup"
 tags:
   - auditor
   - certification

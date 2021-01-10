@@ -1,5 +1,5 @@
 ---
-title: Scaling options
+title: Scaling options in AWS for the workloads 
 date: 2020-12-15
 description: Questions to ask before adopting microservices or adding horizontal scaling 
 tags:

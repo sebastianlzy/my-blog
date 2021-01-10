@@ -3,11 +3,17 @@ title: Deploying a web application using EKS
 date: 2020-12-23
 description: Deploying a web application using EKS 
 tags:
-  - Container
-  - EKS
-
+  - container
+  - Amazon EKS
+banner: ./overall-eks.png
 ---
+![overall](./overall-eks.png)
 
+# Objective
+1. To wrap an existing application into a container
+2. Deploy the container using EKS
+
+# Table of content
 <!-- vscode-markdown-toc -->
 * 1. [Launch a managed cluster](#Launchamanagedcluster)
 	* 1.1. [References](#References)
@@ -46,8 +52,6 @@ tags:
 <!-- /vscode-markdown-toc -->
 
 
-# Objective
-Wrap existing web application into a container and deploy to EKS
 
 # Steps
 
