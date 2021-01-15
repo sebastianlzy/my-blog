@@ -4,7 +4,7 @@ date: 2021-01-13
 tags:
   - certification
   - aws solution architect professional
-  - storage
+  - Storage
   - chapter 4
 ---
 
