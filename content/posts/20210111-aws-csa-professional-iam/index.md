@@ -1,5 +1,5 @@
 ---
-title: "AWS Certified Solution Architect Professional"
+title: "AWS Certified Solution Architect Professional - IAM"
 date: 2021-01-11
 tags:
   - certification
