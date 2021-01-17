@@ -1,5 +1,5 @@
 ---
-title: "AWS Certified Solution Architect Professional - Service Communication"
+title: "AWS Certified Solution Architect Professional - Data engineering"
 date: 2021-01-17
 tags:
   - certification
