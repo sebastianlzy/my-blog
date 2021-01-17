@@ -4,7 +4,7 @@ date: 2021-01-16
 tags:
   - certification
   - aws solution architect professional
-  - database
+  - service communication
   - chapter 7
 ---
 
