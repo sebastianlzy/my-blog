@@ -1,6 +1,6 @@
 ---
 title: "AWS Certified Solution Architect Professional - Storage"
-date: 2021-01-13
+date: 2021-01-14
 tags:
   - certification
   - aws solution architect professional
