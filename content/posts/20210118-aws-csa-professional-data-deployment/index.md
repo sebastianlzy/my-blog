@@ -1,5 +1,5 @@
 ---
-title: "AWS Certified Solution Architect Professional - Deployment"
+title: "[Chapter 10] AWS Certified Solution Architect Professional - Deployment"
 date: 2021-01-18
 tags:
   - certification

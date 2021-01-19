@@ -1,5 +1,5 @@
 ---
-title: "AWS Certified Solution Architect Professional - Service Communication"
+title: "[Chapter 7] AWS Certified Solution Architect Professional - Service Communication"
 date: 2021-01-16
 tags:
   - certification

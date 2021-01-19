@@ -1,5 +1,5 @@
 ---
-title: "AWS Certified Solution Architect Professional - Cost control"
+title: "[Chapter 11] AWS Certified Solution Architect Professional - Cost control"
 date: 2021-01-18
 tags:
   - certification

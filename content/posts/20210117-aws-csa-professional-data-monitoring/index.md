@@ -1,5 +1,5 @@
 ---
-title: "AWS Certified Solution Architect Professional - Monitoring"
+title: "[Chapter 9] AWS Certified Solution Architect Professional - Monitoring"
 date: 2021-01-17
 tags:
   - certification

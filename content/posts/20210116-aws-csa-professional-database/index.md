@@ -1,5 +1,5 @@
 ---
-title: "AWS Certified Solution Architect Professional - Database"
+title: "[Chapter 6] AWS Certified Solution Architect Professional - Database"
 date: 2021-01-16
 tags:
   - certification

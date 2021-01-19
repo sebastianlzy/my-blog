@@ -1,5 +1,5 @@
 ---
-title: "AWS Certified Solution Architect Professional - Security"
+title: "[Chapter 2] AWS Certified Solution Architect Professional - Security"
 date: 2021-01-12
 tags:
   - certification
